@@ -15,4 +15,4 @@ outputs:
     description: A per-language JSON object with hashes for the inputs
 runs:
   using: 'node12'
-  main: '../lib/hash-database-action.js'
+  main: '../lib/hash-inputs-action.js'
