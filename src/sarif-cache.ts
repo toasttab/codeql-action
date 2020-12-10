@@ -80,13 +80,15 @@ export async function copySARIFResults(outputPath: string, logger: Logger) {
   if (cachedSARIFNames.length === 0) {
     throw new Error(`Cache directory ${outputPath} is empty!`);
   }
+  logger.info(
+    `Copying cached [${cachedSARIFNames.join(", ")}] to ${outputPath}`
+  );
   for (let cachedSARIFName of cachedSARIFNames) {
     let cachedSARIFPath = path.join(sarifCachePath, cachedSARIFName);
     let outputSARIFPath = path.join(
       outputPath,
       path.relative(sarifCachePath, cachedSARIFPath)
     );
-    logger.info(`Copying cached ${cachedSARIFPath} to ${outputPath}`);
     await fs.promises.copyFile(cachedSARIFPath, outputSARIFPath);
   }
 }
