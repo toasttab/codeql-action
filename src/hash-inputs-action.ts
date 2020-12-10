@@ -3,6 +3,7 @@ import * as core from "@actions/core";
 import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
+import * as cp from "child_process";
 
 import * as actionsUtil from "./actions-util";
 import * as config_utils from "./config-utils";
@@ -10,8 +11,8 @@ import { getActionsLogger, Logger } from "./logging";
 import * as util from "./util";
 import { Language } from "./languages";
 
-async function getCodeQLHash(_config: config_utils.Config) {
-  return "DUMMY_CODEQL_HASH";
+async function getCodeQLHash(config: config_utils.Config) {
+  return cp.execFileSync("sha256sum", [config.codeQLCmd]);
 }
 
 async function getQueriesHash(
@@ -111,7 +112,7 @@ async function run() {
       ] = {
         queries: await getQueriesHash(language, config, logger),
         database: await getDatabaseHash(language, config, logger),
-        codeql: getCodeQLHash(config),
+        codeql: await getCodeQLHash(config),
       };
     }
     logger.info("hashes:");
