@@ -67,12 +67,12 @@ async function getTrapHash(
 
   let exec = promisify(cp.exec);
   let hashResponse = await exec(
-    "find . -mindepth 2 -type f -name *.trap.gz -print0 | sort -z | xargs -0 zcat | grep -v '^extraction_time' | shasum -",
+    "find . -mindepth 2 -type f -name \\*.trap.gz -print0 | sort -z | xargs -0 zcat | grep -v '^extraction_time' | shasum -",
     { cwd: trapDir }
   );
-
-  logger.info("exec-response:");
-  logger.info(JSON.stringify(hashResponse));
+  if (!!hashResponse.stderr) {
+    logger.error(`exec failure: ${hashResponse.stderr}`);
+  }
   let hash = hashResponse.stdout.split(" ")[0];
   logger.info(`trap-hash: ${hash}`);
   return hash;
