@@ -77,6 +77,9 @@ export async function copySARIFResults(outputPath: string, logger: Logger) {
   }
 
   let cachedSARIFNames = await fs.promises.readdir(sarifCachePath);
+  if (cachedSARIFNames.length === 0) {
+    throw new Error(`Cache directory ${outputPath} is empty!`);
+  }
   for (let cachedSARIFName of cachedSARIFNames) {
     let cachedSARIFPath = path.join(sarifCachePath, cachedSARIFName);
     let outputSARIFPath = path.join(

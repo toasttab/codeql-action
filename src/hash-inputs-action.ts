@@ -115,6 +115,7 @@ async function run() {
       (hashesByLanguage as any) /* XXX circumvent aggressive typescript */[
         language
       ] = {
+        version: 2,
         queries: await getQueriesHash(language, config, logger),
         database: await getDatabaseHash(language, config, logger),
         codeql: getCodeQLHash(config, logger),

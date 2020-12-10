@@ -245,7 +245,6 @@ export async function runAnalyze(
   let cacheKey = sarifCache.readKeyFromEnv();
 
   if (cacheKey) {
-    logger.info(`Restoring cache for ${cacheKey}`);
     await sarifCache.restoreSARIFResults(cacheKey, logger);
   }
 
@@ -294,7 +293,6 @@ export async function runAnalyze(
   );
 
   if (cacheKey) {
-    logger.info(`Saving cache for ${cacheKey}`);
     await sarifCache.saveSARIFResults(outputDir, cacheKey, logger);
   }
 
