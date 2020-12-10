@@ -3,6 +3,7 @@ import * as core from "@actions/core";
 import * as fs from "fs";
 import * as path from "path";
 import * as cp from "child_process";
+import { promisify } from "util";
 
 import * as actionsUtil from "./actions-util";
 import * as config_utils from "./config-utils";
@@ -38,11 +39,11 @@ async function getQueriesHash(
   return finalHash;
 }
 
-function getTrapHash(
+async function getTrapHash(
   language: Language,
   config: config_utils.Config,
   logger: Logger
-): string {
+): Promise<string> {
   const dbPath = util.getCodeQLDatabasePath(config.tempDir, language),
     trapDir = path.join(dbPath, "trap", language);
   if (!fs.existsSync(trapDir)) {
@@ -63,11 +64,14 @@ function getTrapHash(
   }
   logger.info(`trapDir ${trapDir} content:`);
   logger.info(cp.execFileSync("ls", [trapDir]).toString());
-  let hash = cp
-    .execSync(
-      "find . -mindepth 2 -type f -name *.trap.gz | sort | xargs zcat -v | grep -v '^extraction_time' | shasum -",
+
+  let exec = promisify(cp.exec);
+  let hash = (
+    await exec(
+      "find . -mindepth 2 -type f -name *.trap.gz -print0 | sort -z | xargs -0 zcat -v | grep -v '^extraction_time' | shasum -",
       { cwd: trapDir }
     )
+  )
     .toString()
     .split(" ")[0];
   logger.info(`trap-hash: ${hash}`);
@@ -101,7 +105,7 @@ async function run() {
       ] = {
         version: 3,
         queries: await getQueriesHash(language, config, logger),
-        trap: getTrapHash(language, config, logger),
+        trap: await getTrapHash(language, config, logger),
         codeql: getCodeQLHash(config, logger),
       };
     }
