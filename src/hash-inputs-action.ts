@@ -66,14 +66,14 @@ async function getTrapHash(
   logger.info(cp.execFileSync("ls", [trapDir]).toString());
 
   let exec = promisify(cp.exec);
-  let hash = (
-    await exec(
-      "find . -mindepth 2 -type f -name *.trap.gz -print0 | sort -z | xargs -0 zcat -v | grep -v '^extraction_time' | shasum -",
-      { cwd: trapDir }
-    )
-  )
-    .toString()
-    .split(" ")[0];
+  let hashResponse = await exec(
+    "find . -mindepth 2 -type f -name *.trap.gz -print0 | sort -z | xargs -0 zcat | grep -v '^extraction_time' | shasum -",
+    { cwd: trapDir }
+  );
+
+  logger.info("exec-response:");
+  logger.info(JSON.stringify(hashResponse));
+  let hash = hashResponse.stdout.split(" ")[0];
   logger.info(`trap-hash: ${hash}`);
   return hash;
 }
