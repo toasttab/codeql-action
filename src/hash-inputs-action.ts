@@ -50,9 +50,22 @@ function getTrapHash(
       `Trap directory ${trapDir} does not exist. Has the 'create-database' action been used with 'keep-trap: true'?`
     );
   }
+  if (!fs.existsSync(trapDir)) {
+    throw new Error(
+      `Trap directory ${trapDir} does not exist. Has the 'create-database' action been used with 'keep-trap: true'?`
+    );
+  }
+  let trapRootFiles = fs.readdirSync(trapDir);
+  if (trapRootFiles.length === 0) {
+    throw new Error(
+      `Trap directory ${trapDir} is empty. Has the 'create-database' action been used with 'keep-trap: true'?`
+    );
+  }
+  logger.info(`trapDir ${trapDir} content:`);
+  logger.info(cp.execFileSync("ls", [trapDir]).toString());
   let hash = cp
     .execSync(
-      "find . -mindepth 2 -type f -name *.trap.gz -print0 | sort -z | xargs -0 zcat | grep -v '^extraction_time' | shasum -",
+      "find . -mindepth 2 -type f -name *.trap.gz | sort | xargs zcat -v | grep -v '^extraction_time' | shasum -",
       { cwd: trapDir }
     )
     .toString()
