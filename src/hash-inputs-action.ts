@@ -11,8 +11,10 @@ import { getActionsLogger, Logger } from "./logging";
 import * as util from "./util";
 import { Language } from "./languages";
 
-async function getCodeQLHash(config: config_utils.Config) {
-  return cp.execFileSync("sha256sum", [config.codeQLCmd]).toString();
+function getCodeQLHash(config: config_utils.Config, logger: Logger) {
+  let hash = cp.execFileSync("sha256sum", [config.codeQLCmd]).toString();
+  logger.info(`codeql-hash: ${hash}`);
+  return hash;
 }
 
 async function getQueriesHash(
@@ -112,7 +114,7 @@ async function run() {
       ] = {
         queries: await getQueriesHash(language, config, logger),
         database: await getDatabaseHash(language, config, logger),
-        codeql: await getCodeQLHash(config),
+        codeql: getCodeQLHash(config, logger),
       };
     }
     logger.info("hashes:");
