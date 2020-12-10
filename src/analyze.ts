@@ -251,7 +251,8 @@ export async function runAnalyze(
   fs.mkdirSync(outputDir, { recursive: true });
 
   let queriesStats: QueriesStatusReport;
-  if (await sarifCache.skipAnalysis()) {
+  let cacheHit = await sarifCache.skipAnalysis();
+  if (cacheHit) {
     logger.info(`Using cache for ${cacheKey} instead of analyzing`);
     await sarifCache.copySARIFResults(outputDir, logger);
     queriesStats = {};
@@ -292,7 +293,7 @@ export async function runAnalyze(
     logger
   );
 
-  if (cacheKey) {
+  if (cacheKey && !cacheHit) {
     await sarifCache.saveSARIFResults(outputDir, cacheKey, logger);
   }
 
