@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import * as cache from "@actions/cache";
+import { Logger } from "./logging";
 
 export type CacheKey = string;
 
@@ -16,7 +17,11 @@ async function getSARIFCachePath(): Promise<string | undefined> {
   return path.join(runnerTemp, "codeql-results-cache");
 }
 
-export async function saveSARIFResults(outputPath: string, key: CacheKey) {
+export async function saveSARIFResults(
+  outputPath: string,
+  key: CacheKey,
+  logger: Logger
+) {
   const sarifCachePath = await getSARIFCachePath();
   if (sarifCachePath === undefined) {
     return;
@@ -33,9 +38,11 @@ export async function saveSARIFResults(outputPath: string, key: CacheKey) {
       sarifCachePath,
       path.relative(outputPath, outputSARIFPath)
     );
+    logger.info(`Copying file ${outputSARIFPath} to cached ${cachedSARIFPath}`);
     await fs.promises.copyFile(outputSARIFPath, cachedSARIFPath);
   }
 
+  logger.info(`Performing saveCache(${sarifCachePath}, ${key})`);
   await cache.saveCache([sarifCachePath], serializeKey(key));
 }
 
@@ -49,7 +56,7 @@ export async function skipAnalysis(): Promise<boolean> {
   return cachedSARIFPaths.length > 0; // TODO
 }
 
-export async function restoreSARIFResults(key: CacheKey) {
+export async function restoreSARIFResults(key: CacheKey, logger: Logger) {
   if (!key) {
     throw new Error(`Got invalid cache key: ${key}`);
   }
@@ -59,10 +66,11 @@ export async function restoreSARIFResults(key: CacheKey) {
   }
 
   await fs.promises.mkdir(sarifCachePath);
+  logger.info(`Performing restoreCache(${sarifCachePath}, ${key})`);
   await cache.restoreCache([sarifCachePath], serializeKey(key));
 }
 
-export async function copySARIFResults(outputPath: string) {
+export async function copySARIFResults(outputPath: string, logger: Logger) {
   const sarifCachePath = await getSARIFCachePath();
   if (sarifCachePath === undefined) {
     return;
@@ -75,6 +83,7 @@ export async function copySARIFResults(outputPath: string) {
       outputPath,
       path.relative(sarifCachePath, cachedSARIFPath)
     );
+    logger.info(`Copying cached ${cachedSARIFPath} to ${outputPath}`);
     await fs.promises.copyFile(cachedSARIFPath, outputSARIFPath);
   }
 }
