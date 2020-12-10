@@ -52,10 +52,11 @@ function getTrapHash(
   }
   let hash = cp
     .execSync(
-      "find . -mindepth 2 -type f -name *.trap.gz -print0 | sort -z | xargs -0 zcat | grep -Z -v '^extraction_time' | shasum -",
+      "find . -mindepth 2 -type f -name *.trap.gz -print0 | sort -z | xargs -0 zcat | grep -v '^extraction_time' | shasum -",
       { cwd: trapDir }
     )
-    .toString();
+    .toString()
+    .split(" ")[0];
   logger.info(`trap-hash: ${hash}`);
   return hash;
 }
