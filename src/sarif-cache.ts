@@ -5,6 +5,9 @@ import * as cache from "@actions/cache";
 
 export type CacheKey = string;
 
+function serializeKey(key: CacheKey) {
+  return Buffer.from(key).toString("base64");
+}
 async function getSARIFCachePath(): Promise<string | undefined> {
   const runnerTemp = process.env.RUNNER_TEMP;
   if (runnerTemp === undefined) {
@@ -33,7 +36,7 @@ export async function saveSARIFResults(outputPath: string, key: CacheKey) {
     await fs.promises.copyFile(outputSARIFPath, cachedSARIFPath);
   }
 
-  await cache.saveCache([sarifCachePath], key);
+  await cache.saveCache([sarifCachePath], serializeKey(key));
 }
 
 export async function skipAnalysis(): Promise<boolean> {
@@ -56,7 +59,7 @@ export async function restoreSARIFResults(key: CacheKey) {
   }
 
   await fs.promises.mkdir(sarifCachePath);
-  await cache.restoreCache([sarifCachePath], key);
+  await cache.restoreCache([sarifCachePath], serializeKey(key));
 }
 
 export async function copySARIFResults(outputPath: string) {
