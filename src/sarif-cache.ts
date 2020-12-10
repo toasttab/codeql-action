@@ -24,7 +24,8 @@ export async function saveSARIFResults(
 ) {
   const sarifCachePath = await getSARIFCachePath();
   if (sarifCachePath === undefined) {
-    return;
+    throw new Error("XXX Early return in saveSARIFResults");
+    // return
   }
 
   if (!fs.existsSync(sarifCachePath)) {
@@ -49,7 +50,8 @@ export async function saveSARIFResults(
 export async function skipAnalysis(): Promise<boolean> {
   const sarifCachePath = await getSARIFCachePath();
   if (sarifCachePath === undefined) {
-    return false;
+    throw new Error("XXX Early return in skipAnalysis");
+    // return false;
   }
 
   let cachedSARIFPaths = await fs.promises.readdir(sarifCachePath);
@@ -62,7 +64,8 @@ export async function restoreSARIFResults(key: CacheKey, logger: Logger) {
   }
   const sarifCachePath = await getSARIFCachePath();
   if (sarifCachePath === undefined) {
-    return;
+    throw new Error("XXX Early return in restoreSARIFResults");
+    // return
   }
 
   await fs.promises.mkdir(sarifCachePath);
@@ -73,7 +76,8 @@ export async function restoreSARIFResults(key: CacheKey, logger: Logger) {
 export async function copySARIFResults(outputPath: string, logger: Logger) {
   const sarifCachePath = await getSARIFCachePath();
   if (sarifCachePath === undefined) {
-    return;
+    throw new Error("XXX Early return in copySARIFResults");
+    // return
   }
 
   let cachedSARIFNames = await fs.promises.readdir(sarifCachePath);
