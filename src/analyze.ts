@@ -242,9 +242,17 @@ export async function runAnalyze(
   // Delete the tracer config env var to avoid tracing ourselves
   delete process.env[sharedEnv.ODASA_TRACER_CONFIGURATION];
 
+  let cacheKey = sarifCache.readKeyFromEnv();
+
+  if (cacheKey) {
+    logger.info(`Restoring cache for ${cacheKey}`);
+    await sarifCache.restoreSARIFResults(cacheKey);
+  }
+
   fs.mkdirSync(outputDir, { recursive: true });
 
   if (await sarifCache.skipAnalysis()) {
+    logger.info(`Using cache for ${cacheKey} instead of analyzing`);
     sarifCache.copySARIFResults(outputDir);
     return {};
   } else {
@@ -283,7 +291,10 @@ export async function runAnalyze(
       logger
     );
 
-    await sarifCache.saveSARIFResults(outputDir);
+    if (cacheKey) {
+      logger.info(`Saving cache for ${cacheKey}`);
+      await sarifCache.saveSARIFResults(outputDir, cacheKey);
+    }
 
     return { ...queriesStats, ...uploadStats };
   }
