@@ -253,7 +253,7 @@ export async function runAnalyze(
   let queriesStats: QueriesStatusReport;
   if (await sarifCache.skipAnalysis()) {
     logger.info(`Using cache for ${cacheKey} instead of analyzing`);
-    sarifCache.copySARIFResults(outputDir, logger);
+    await sarifCache.copySARIFResults(outputDir, logger);
     queriesStats = {};
   } else {
     if (!actionsUtil.getOptionalInput("database-is-finalized")) {
