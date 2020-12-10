@@ -12,7 +12,7 @@ import * as util from "./util";
 import { Language } from "./languages";
 
 async function getCodeQLHash(config: config_utils.Config) {
-  return cp.execFileSync("sha256sum", [config.codeQLCmd]);
+  return cp.execFileSync("sha256sum", [config.codeQLCmd]).toString();
 }
 
 async function getQueriesHash(
