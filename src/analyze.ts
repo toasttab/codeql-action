@@ -251,17 +251,18 @@ export async function runAnalyze(
 
   fs.mkdirSync(outputDir, { recursive: true });
 
+  let queriesStats: QueriesStatusReport;
   if (await sarifCache.skipAnalysis()) {
     logger.info(`Using cache for ${cacheKey} instead of analyzing`);
     sarifCache.copySARIFResults(outputDir);
-    return {};
+    queriesStats = {};
   } else {
     if (!actionsUtil.getOptionalInput("database-is-finalized")) {
       await finalizeDatabaseCreation(config, threadsFlag, logger);
     }
 
     logger.info("Analyzing database");
-    const queriesStats = await runQueries(
+    queriesStats = await runQueries(
       outputDir,
       memoryFlag,
       addSnippetsFlag,
@@ -269,33 +270,33 @@ export async function runAnalyze(
       config,
       logger
     );
-
-    if (!doUpload) {
-      logger.info("Not uploading results");
-      return { ...queriesStats };
-    }
-
-    const uploadStats = await upload_lib.upload(
-      outputDir,
-      repositoryNwo,
-      commitOid,
-      ref,
-      analysisKey,
-      analysisName,
-      workflowRunID,
-      checkoutPath,
-      environment,
-      config.gitHubVersion,
-      apiDetails,
-      mode,
-      logger
-    );
-
-    if (cacheKey) {
-      logger.info(`Saving cache for ${cacheKey}`);
-      await sarifCache.saveSARIFResults(outputDir, cacheKey);
-    }
-
-    return { ...queriesStats, ...uploadStats };
   }
+
+  if (!doUpload) {
+    logger.info("Not uploading results");
+    return { ...queriesStats };
+  }
+
+  const uploadStats = await upload_lib.upload(
+    outputDir,
+    repositoryNwo,
+    commitOid,
+    ref,
+    analysisKey,
+    analysisName,
+    workflowRunID,
+    checkoutPath,
+    environment,
+    config.gitHubVersion,
+    apiDetails,
+    mode,
+    logger
+  );
+
+  if (cacheKey) {
+    logger.info(`Saving cache for ${cacheKey}`);
+    await sarifCache.saveSARIFResults(outputDir, cacheKey);
+  }
+
+  return { ...queriesStats, ...uploadStats };
 }
