@@ -245,7 +245,13 @@ export async function runAnalyze(
   let cacheKey = sarifCache.readKeyFromEnv();
 
   if (cacheKey) {
-    await sarifCache.restoreSARIFResults(cacheKey, logger);
+    try {
+      await sarifCache.restoreSARIFResults(cacheKey, logger);
+    } catch (e) {
+      logger.error(
+        `Non-fatal error: Could not restore the cache for ${cacheKey}: ${e?.message}`
+      );
+    }
   }
 
   fs.mkdirSync(outputDir, { recursive: true });
@@ -294,7 +300,13 @@ export async function runAnalyze(
   );
 
   if (cacheKey && !cacheHit) {
-    await sarifCache.saveSARIFResults(outputDir, cacheKey, logger);
+    try {
+      await sarifCache.saveSARIFResults(outputDir, cacheKey, logger);
+    } catch (e) {
+      logger.error(
+        `Non-fatal error: Could not cache the results for ${cacheKey}: ${e?.message}`
+      );
+    }
   }
 
   return { ...queriesStats, ...uploadStats };
