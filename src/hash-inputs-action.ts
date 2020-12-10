@@ -12,7 +12,10 @@ import * as util from "./util";
 import { Language } from "./languages";
 
 function getCodeQLHash(config: config_utils.Config, logger: Logger) {
-  let hash = cp.execFileSync("sha256sum", [config.codeQLCmd]).toString();
+  let hash = cp
+    .execFileSync("sha256sum", [config.codeQLCmd])
+    .toString()
+    .split(" ")[0];
   logger.info(`codeql-hash: ${hash}`);
   return hash;
 }
