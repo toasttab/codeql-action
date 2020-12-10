@@ -2,7 +2,6 @@ import * as core from "@actions/core";
 
 import * as fs from "fs";
 import * as path from "path";
-import * as crypto from "crypto";
 import * as cp from "child_process";
 
 import * as actionsUtil from "./actions-util";
@@ -13,7 +12,7 @@ import { Language } from "./languages";
 
 function getCodeQLHash(config: config_utils.Config, logger: Logger) {
   let hash = cp
-    .execFileSync("sha256sum", [config.codeQLCmd])
+    .execFileSync("shasum", [config.codeQLCmd])
     .toString()
     .split(" ")[0];
   logger.info(`codeql-hash: ${hash}`);
@@ -38,58 +37,29 @@ async function getQueriesHash(
   logger.info(`queries-hash: ${finalHash}`);
   return finalHash;
 }
-async function getDatabaseHash(
+
+function getTrapHash(
   language: Language,
   config: config_utils.Config,
   logger: Logger
-): Promise<string> {
-  const dbPath = util.getCodeQLDatabasePath(config.tempDir, language);
-  let relDir = path.join(dbPath, `db-${language}`, "default");
-  let combined_all = crypto.createHash("sha256");
-  let combined_noExtractionTime = crypto.createHash("sha256");
-  let files: {
-    [name: string]: string;
-  } = {};
-  let relFiles = fs
-    .readdirSync(relDir)
-    .filter((n) => n.endsWith(".rel"))
-    .map((n) => path.join(relDir, n));
-  if (relFiles.length === 0) {
+): string {
+  const dbPath = util.getCodeQLDatabasePath(config.tempDir, language),
+    trapDir = path.join(dbPath, "trap", language);
+  if (!fs.existsSync(trapDir)) {
     throw new Error(
-      `No '.rel' files found in ${relDir}. Has the 'create-database' action been called?`
+      `Trap directory ${trapDir} does not exist. Has the 'create-database' action been used with 'keep-trap: true'?`
     );
   }
-  for (const relFile of relFiles) {
-    let content = fs.readFileSync(relFile); // XXX this ought to be chunked for large tables!
-    let solo = crypto.createHash("sha256");
-    solo.update(content);
-    files[path.relative(dbPath, relFile)] = solo.digest("hex");
-    if (
-      language === Language.javascript &&
-      path.basename(relFile) !== "extraction_time.rel"
-    ) {
-      combined_noExtractionTime.update(content);
-    }
-    combined_all.update(content);
-  }
-  let stableHash = combined_noExtractionTime.digest("hex");
-  logger.info("database-hash:");
-  logger.info(
-    JSON.stringify(
-      {
-        language,
-        combined: {
-          all: combined_all.digest("hex"),
-          noExtractionTime: stableHash,
-          files,
-        },
-      },
-      null,
-      2
+  let hash = cp
+    .execSync(
+      "find . -mindepth 2 -type f -name *.trap.gz -print0 | sort -z | xargs -0 zcat | grep -Z -v '^extraction_time' | shasum -",
+      { cwd: trapDir }
     )
-  );
-  return stableHash;
+    .toString();
+  logger.info(`trap-hash: ${hash}`);
+  return hash;
 }
+
 async function run() {
   const logger = getActionsLogger();
   try {
@@ -115,9 +85,9 @@ async function run() {
       (hashesByLanguage as any) /* XXX circumvent aggressive typescript */[
         language
       ] = {
-        version: 2,
+        version: 3,
         queries: await getQueriesHash(language, config, logger),
-        database: await getDatabaseHash(language, config, logger),
+        trap: getTrapHash(language, config, logger),
         codeql: getCodeQLHash(config, logger),
       };
     }
@@ -125,7 +95,7 @@ async function run() {
     logger.info(JSON.stringify(hashesByLanguage, null, 2));
     core.setOutput("hashes", JSON.stringify(hashesByLanguage));
   } catch (error) {
-    core.setFailed(`We were unable to hash the inputs.  ${error.message}`);
+    core.setFailed(`We were unable to hash the inputs. ${error.message}`);
     console.log(error);
     return;
   }
