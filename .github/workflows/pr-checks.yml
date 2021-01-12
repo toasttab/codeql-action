@@ -2,7 +2,6 @@ name: "PR checks"
 
 on:
   push:
-    branches: [main, v1]
   pull_request:
 
 jobs:
@@ -34,10 +33,11 @@ jobs:
     needs: [check-js, check-node-modules]
     strategy:
       matrix:
-        os: [ubuntu-latest,macos-latest]
+        os: [ubuntu-latest,windows-latest,macos-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v2
+    - run: npm ci
     - name: npm run-script test
       run: npm run-script test
